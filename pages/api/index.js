@@ -1,6 +1,9 @@
-const cars = [
+import { serialize } from 'cookie';
+import { SignJWT } from 'jose';
+
+let listings = [
   { "id": 1, "name": "Tata Nexon", "model": "2024", "status": 1 },
-  { "id": 2, "name": "Hyundai Creta", "model": "2023", "status": 0 },
+  { "id": 2, "name": "Hyundai Creta", "model": "2023", "status": 2 },
   { "id": 3, "name": "Maruti Suzuki Swift", "model": "2022", "status": 1 },
   { "id": 4, "name": "Mahindra XUV700", "model": "2021", "status": 0 },
   { "id": 5, "name": "Kia Seltos", "model": "2020", "status": 1 },
@@ -36,11 +39,46 @@ const cars = [
   { "id": 35, "name": "Hyundai Grand i10", "model": "2023", "status": 1 }
 ];
 
-export async function GET() {
-  return new Response(JSON.stringify(cars), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'jFhs8HvW0y7Yy4tK4JzqUK9VeR74V5Fe1XzgMQ3nF8A=');
+
+export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    return res.status(200).json(listings);
+  }
+
+  if (req.method === 'PATCH') {
+    const { id, status } = req.body;
+    listings = listings.map(val =>
+      val.id === id ? { ...val, status } : val
+    );
+    return res.status(200).json({ message: 'Updated' });
+  }
+
+  if (req.method === 'PUT') {
+    const { id, data } = req.body;
+    listings = listings.map(val =>
+      val.id === id ? { ...val, ...data } : val
+    );
+    return res.status(200).json({ message: 'Edited' });
+  }
+
+  if (req.method === 'POST') {
+    const { username, password } = req.body;
+    
+    if (username == 'admin' && password == 'admin') {
+      const token = await new SignJWT({ username })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setExpirationTime('1h')
+      .sign(secret);
+
+      const cookie = serialize('token', token, { httpOnly: true, path: '/', maxAge: 60 * 60});
+
+      res.setHeader('Set-Cookie', cookie);
+      return res.status(200).json({ message: 'Login successful' });
+    }
+
+    return res.status(401).json({ message: 'Invalid credentials' });
+  }
+
+  res.status(400).end();
 }

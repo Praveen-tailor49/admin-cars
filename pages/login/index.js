@@ -6,22 +6,28 @@ const Login = () => {
   const [data, setData] = useState({ username: '', password: '' })
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, type=false) => {
     e.preventDefault();
     const {username, password} = data
-    const res = await fetch('/api', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
-    
-    if (res.ok) {
-      toast.success('Login successful!');
-      router.push('/home');
-    }else {
-      const err = await res.json();
-      toast.error(err.message || 'Login failed');
-    }
+    let check = false
+    if(type) check = true;
+    else if(username && password) check = true
+
+    if(check) {
+      const res = await fetch('/api?login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, type }),
+      });
+      
+      if (res.ok) {
+        router.push('/home');
+        toast.success('Login successful!');
+      }else {
+        const err = await res.json();
+        toast.error(err.message || 'Login failed');
+      }
+    } else toast.error('Empty field!');
   };
 
 
@@ -37,14 +43,13 @@ const Login = () => {
           </div>
           <div className="w-full mb-6">
             <input className="mb-4 p-2 appearance-none block w-full bg-gray-200 placeholder-gray-900 rounded border focus:border-teal-500" type="text" placeholder="Email" onChange={(e) =>setData((prev) => ({ ...prev, username: e.target.value }))} />
-            <input className="mb-4 p-2 appearance-none block w-full bg-gray-200 placeholder-gray-900 rounded border focus:border-teal-500" type="text" placeholder="Password" onChange={(e) =>setData((prev) => ({ ...prev, password: e.target.value }))} />
+            <input className="mb-4 p-2 appearance-none block w-full bg-gray-200 placeholder-gray-900 rounded border focus:border-teal-500" type="password" placeholder="Password" onChange={(e) =>setData((prev) => ({ ...prev, password: e.target.value }))} />
 
             <div className="flex items-center">
-              <div className="w-1/2 flex items-center">
-                <input id="remember-me" type="checkbox" className="mt-1 mr-2" />
-                <label htmlFor="remember-me">Remember me!</label>
+              <div className="w-1/2 flex items-center ">
+                <button className='cursor-pointer' onClick={(e) =>handleSubmit(e, true)}>Demo Login!</button>
               </div>
-              <button className="ml-auto w-1/2 bg-gray-800 text-white p-2 rounded font-semibold hover:bg-gray-900" type="submit" onClick={handleSubmit}>
+              <button className="ml-auto w-1/2 bg-gray-800 text-white p-2 rounded font-semibold hover:bg-gray-900 cursor-pointer" type="submit" onClick={handleSubmit}>
                 Log In
               </button>
             </div>

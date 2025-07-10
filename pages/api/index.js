@@ -39,45 +39,78 @@ let listings = [
   { "id": 35, "name": "Hyundai Grand i10", "model": "2023", "status": 1 }
 ];
 
+let auditLog = []
+
+const login = [{ username: 'admin', password: 'admin' }]
+
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'jFhs8HvW0y7Yy4tK4JzqUK9VeR74V5Fe1XzgMQ3nF8A=');
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') {
-    return res.status(200).json(listings);
-  }
+  if (req.url?.includes('get')) return res.status(200).json(listings)
 
-  if (req.method === 'PATCH') {
-    const { id, status } = req.body;
-    listings = listings.map(val =>
-      val.id === id ? { ...val, status } : val
-    );
+  if (req.url?.includes('status')) {
+    try {
+      const { id, status } = req.body;
+      listings = listings.map(val =>
+        val.id === id ? { ...val, status } : val
+      );
+    } catch { return res.status(400).json({ message: 'Not Update' }) }
     return res.status(200).json({ message: 'Updated' });
   }
 
-  if (req.method === 'PUT') {
-    const { id, data } = req.body;
-    listings = listings.map(val =>
-      val.id === id ? { ...val, ...data } : val
-    );
-    return res.status(200).json({ message: 'Edited' });
+  if (req.url?.includes('update')) {
+    try {
+      const { id, data } = req.body;
+      listings = listings.map(val =>
+        val.id === id ? { ...val, ...data } : val
+      );
+      return res.status(200).json({ message: 'Successful' });
+    } catch { return res.status(400).json({ message: 'Not Update' }) }
   }
 
-  if (req.method === 'POST') {
-    const { username, password } = req.body;
-    
-    if (username == 'admin' && password == 'admin') {
-      const token = await new SignJWT({ username })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('1h')
-      .sign(secret);
+  if (req.url?.includes('login')) {
+    try {
+      const { username, password, type } = req.body;
+      if ((username == 'admin' && password == '12345') || type) {
+        const token = await new SignJWT({ username })
+          .setProtectedHeader({ alg: 'HS256' }).setExpirationTime('1h').sign(secret);
 
-      const cookie = serialize('token', token, { httpOnly: true, path: '/', maxAge: 60 * 60});
-
-      res.setHeader('Set-Cookie', cookie);
-      return res.status(200).json({ message: 'Login successful' });
+        res.setHeader('Set-Cookie', serialize('token', token, { httpOnly: true, path: '/', maxAge: 60 * 60 }));
+        return res.status(200).json({ message: 'Successful' });
+      }
+      return res.status(401).json({ message: 'Invalid credentials' });
+    } catch {
+      return res.status(400).json({ message: 'Invalid' });
     }
 
-    return res.status(401).json({ message: 'Invalid credentials' });
+  }
+
+  if (req.url?.includes('logout')) {
+    try {
+      const result = serialize('token', '', { httpOnly: true, path: '/', maxAge: -1, });
+      res.setHeader('Set-Cookie', result);
+      return res.status(200).json({ message: 'Logged out' });
+    } catch {
+      return res.status(400).json({ message: 'Not Logged out' });
+    }
+  }
+
+  if(req.url?.includes('auditGet')){
+    try{ return res.status(200).json(auditLog)}
+    catch{return res.status(400).json({ message: 'Error' })}
+  }
+
+  if (req.url?.includes('auditUpdate')) {
+    try {
+      const { name, action, changeFrom, changeTo } = req.body;
+      const data = [...auditLog]
+      data.push({ name, action, changeFrom, changeTo })
+      auditLog = data
+      return res.status(200).json({ message: 'Audit Log Update', auditLog });
+    }
+    catch {
+      return res.status(400).json({ message: 'Not Update' });
+    }
   }
 
   res.status(400).end();

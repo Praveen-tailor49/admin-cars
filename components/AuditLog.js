@@ -15,7 +15,7 @@ export default function AuditLog() {
             <div className="relative mx-4 mt-4 overflow-hidden text-slate-700 bg-white rounded-none bg-clip-border">
                 <div className="flex items-center justify-between ">
                     <div>
-                        <h3 className="text-lg font-semibold text-slate-800">Car List</h3>
+                        <h3 className="text-lg font-semibold text-slate-800">Audit List</h3>
                     </div>
                 </div>
 

@@ -22,7 +22,8 @@ const Login = () => {
       
       if (res.ok) {
         router.push('/home');
-        toast.success('Login successful!');
+        setTimeout(() => toast.success('Login successful!'), 800)
+        
       }else {
         const err = await res.json();
         toast.error(err.message || 'Login failed');
